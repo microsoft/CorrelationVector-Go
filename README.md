@@ -1,8 +1,8 @@
 # CorrelationVector for Go
 
-[![godoc](https://godoc.org/github.com/Microsoft/CorrelationVector-Go?status.svg)](https://godoc.org/github.com/Azure/azure-sdk-for-go)
-[![Build Status](https://travis-ci.org/Microsoft/CorrelationVector-Go.svg?branch=master)](https://travis-ci.org/Azure/azure-sdk-for-go)
-[![Go Report Card](https://goreportcard.com/badge/github.com/Microsoft/CorrelationVector-Go)](https://goreportcard.com/report/github.com/Azure/azure-sdk-for-go)
+[![godoc](https://godoc.org/github.com/Microsoft/CorrelationVector-Go?status.svg)](https://godoc.org/github.com/Microsoft/CorrelationVector-Go)
+[![Build Status](https://travis-ci.org/Microsoft/CorrelationVector-Go.svg?branch=master)](https://travis-ci.org/Microsoft/CorrelationVector-Go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Microsoft/CorrelationVector-Go)](https://goreportcard.com/report/github.com/Microsoft/CorrelationVector-Go)
 
 CorrelationVector-Go provides the Go implementation of the CorrelationVector protocol for
 tracing and correlation of events through a distributed system.
