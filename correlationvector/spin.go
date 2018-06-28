@@ -78,6 +78,10 @@ func Spin(correlationVector string) (*CorrelationVector, error) {
 // SpinWithParameters creates a new correlation vector by applying the Spin
 // operator to an existing value. This should be done at the entry point of an operation.
 func SpinWithParameters(correlationVector string, parameters *SpinParameters) (*CorrelationVector, error) {
+	if isImmutable(correlationVector) {
+		return Parse(correlationVector)
+	}
+
 	version, err := inferVersion(correlationVector)
 	if err != nil {
 		return nil, err
@@ -107,7 +111,7 @@ func SpinWithParameters(correlationVector string, parameters *SpinParameters) (*
 	if parameters.totalBits() == 64 {
 		mask = 0
 	}
-	mask -= 1
+	mask--
 	value &= mask
 
 	s := strconv.Itoa(int(value))
@@ -115,7 +119,11 @@ func SpinWithParameters(correlationVector string, parameters *SpinParameters) (*
 		s = strconv.Itoa(int(value>>32)) + "." + s
 	}
 
-	return newCorrelationVector(correlationVector+"."+s, 0, version), nil
+	var baseVector = correlationVector + "." + s
+	if isOversized(baseVector, 0, version) {
+		return Parse(correlationVector + CVTerminator)
+	}
+	return newCorrelationVector(baseVector, 0, version, false), nil
 }
 
 var defaultParameters = SpinParameters{CoarseInterval, ShortPeriodicity, TwoEntropy}

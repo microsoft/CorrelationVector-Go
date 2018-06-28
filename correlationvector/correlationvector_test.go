@@ -264,7 +264,7 @@ func TestExtendTooBigExtensionCorrelationVector(t *testing.T) {
 	ValidateCorrelationVectorDuringCreation = false
 }
 
-func TestIncrementPastMaxWithNoErrors(t *testing.T) {
+func TestIncrementPastMaxWithTerminator(t *testing.T) {
 	vector, _ := Extend("tul4NUsfs9Cl7mOf.2147483647.2147483647.2147483647.21474836479")
 	vector.Increment()
 	if vector.Value() != "tul4NUsfs9Cl7mOf.2147483647.2147483647.2147483647.21474836479.1" {
@@ -275,13 +275,13 @@ func TestIncrementPastMaxWithNoErrors(t *testing.T) {
 		vector.Increment()
 	}
 
-	// We hit 63 chars so we silently stopped counting
-	if vector.Value() != "tul4NUsfs9Cl7mOf.2147483647.2147483647.2147483647.21474836479.9" {
-		t.Errorf("Incrementing past max correlation vector should return tul4NUsfs9Cl7mOf.2147483647.2147483647.2147483647.21474836479.9, got %s", vector.Value())
+	// We hit 63 chars so we silently stopped counting and add the terminator
+	if vector.Value() != "tul4NUsfs9Cl7mOf.2147483647.2147483647.2147483647.21474836479.9!" {
+		t.Errorf("Incrementing past max correlation vector should return tul4NUsfs9Cl7mOf.2147483647.2147483647.2147483647.21474836479.9!, got %s", vector.Value())
 	}
 }
 
-func TestIncrementPastMaxWithNoErrorsV2(t *testing.T) {
+func TestIncrementPastMaxWithTerminatorV2(t *testing.T) {
 	vector, _ := Extend("KZY+dsX2jEaZesgCPjJ2Ng.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.214")
 	vector.Increment()
 	if vector.Value() != "KZY+dsX2jEaZesgCPjJ2Ng.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.214.1" {
@@ -292,8 +292,58 @@ func TestIncrementPastMaxWithNoErrorsV2(t *testing.T) {
 		vector.Increment()
 	}
 
-	// We hit 127 chars so we silently stopped counting
-	if vector.Value() != "KZY+dsX2jEaZesgCPjJ2Ng.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.214.9" {
-		t.Errorf("Incrementing past max correlation vector should return KZY+dsX2jEaZesgCPjJ2Ng.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.214.9, got %s", vector.Value())
+	// We hit 127 chars so we silently stopped counting and add the terminator
+	if vector.Value() != "KZY+dsX2jEaZesgCPjJ2Ng.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.214.9!" {
+		t.Errorf("Incrementing past max correlation vector should return KZY+dsX2jEaZesgCPjJ2Ng.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.214.9!, got %s", vector.Value())
+	}
+}
+
+func TestExtendOverMaxCVLength(t *testing.T) {
+	var baseVector = "tul4NUsfs9Cl7mOf.2147483647.2147483647.2147483647.214748364.23"
+	cv, _ := Extend(baseVector)
+	if cv.Value() != (baseVector + CVTerminator) {
+		t.Errorf("Extending cv with max length should be appended with !, got %s", cv.Value())
+	}
+}
+
+func TestExtendOverMaxCVLengthV2(t *testing.T) {
+	var baseVector = "KZY+dsX2jEaZesgCPjJ2Ng.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.2141"
+	cv, _ := Extend(baseVector)
+	if cv.Value() != (baseVector + CVTerminator) {
+		t.Errorf("Extending cv with max length should be appended with !, got %s", cv.Value())
+	}
+}
+
+func TestImmutableCVWithTerminator(t *testing.T) {
+	var cvStr = "tul4NUsfs9Cl7mOf.2147483647.2147483647.2147483647.21474836479.0!"
+
+	cv1, _ := Parse(cvStr)
+	if cvStr != cv1.Increment() {
+		t.Errorf("Terminated CV should remain unchanged after increment operation")
+	}
+	cv2, _ := Extend(cvStr)
+	if cvStr != cv2.Value() {
+		t.Errorf("Terminated CV should remain unchanged after extend operation")
+	}
+	cv3, _ := Spin(cvStr)
+	if cvStr != cv3.Value() {
+		t.Errorf("Terminated CV should remain unchanged after spin operation")
+	}
+}
+
+func TestImmutableCVWithTerminatorV2(t *testing.T) {
+	var cvStr = "KZY+dsX2jEaZesgCPjJ2Ng.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.214.0!"
+
+	cv1, _ := Parse(cvStr)
+	if cvStr != cv1.Increment() {
+		t.Errorf("Terminated CV should remain unchanged after increment operation")
+	}
+	cv2, _ := Extend(cvStr)
+	if cvStr != cv2.Value() {
+		t.Errorf("Terminated CV should remain unchanged after extend operation")
+	}
+	cv3, _ := Spin(cvStr)
+	if cvStr != cv3.Value() {
+		t.Errorf("Terminated CV should remain unchanged after spin operation")
 	}
 }

@@ -27,6 +27,9 @@ const (
 
 	// BaseLengthV2 is the max length of a V2 correlation vector base
 	BaseLengthV2 int = 22
+
+	// CVTerminator sign for a correlation vector
+	CVTerminator string = "!"
 )
 
 // ValidateCorrelationVectorDuringCreation indicates whether or not to validate the
@@ -35,9 +38,10 @@ var ValidateCorrelationVectorDuringCreation = false
 
 // CorrelationVector represents a lightweight vector for identifying and measuring causality.
 type CorrelationVector struct {
-	baseVector string
-	extension  int32
-	version    Version
+	baseVector  string
+	extension   int32
+	version     Version
+	isImmutable bool
 }
 
 // Version represents a version of the correlation vector protocol.
@@ -66,12 +70,15 @@ func NewCorrelationVectorWithVersion(version Version) (*CorrelationVector, error
 	if err != nil {
 		return nil, err
 	}
-	return newCorrelationVector(base, 0, version), nil
+	return newCorrelationVector(base, 0, version, false), nil
 }
 
 // Extend creates a new correlation vector by extending an existing value.
 // this should be done at the entry point of an operation.
 func Extend(correlationVector string) (*CorrelationVector, error) {
+	if isImmutable(correlationVector) {
+		return Parse(correlationVector)
+	}
 	version, err := inferVersion(correlationVector)
 
 	if ValidateCorrelationVectorDuringCreation {
@@ -80,17 +87,28 @@ func Extend(correlationVector string) (*CorrelationVector, error) {
 		}
 	}
 
-	return newCorrelationVector(correlationVector, 0, version), err
+	if isOversized(correlationVector, 0, version) {
+		return Parse(correlationVector + CVTerminator)
+	}
+	return newCorrelationVector(correlationVector, 0, version, false), err
 }
 
 // Parse creates a new correlation vector by parsing its string representation.
 func Parse(correlationVector string) (*CorrelationVector, error) {
 	version, err := inferVersion(correlationVector)
+	var isImmutable = isImmutable(correlationVector)
 
 	p := strings.LastIndex(correlationVector, ".")
 	if p > 0 {
-		if extension, exterr := strconv.Atoi(correlationVector[p+1:]); exterr == nil && extension >= 0 {
-			return newCorrelationVector(correlationVector[:p], extension, version), err
+		var extensionVal string
+		if isImmutable {
+			extensionVal = correlationVector[p+1 : len(correlationVector)-1]
+		} else {
+			extensionVal = correlationVector[p+1:]
+		}
+		extension, exterr := strconv.Atoi(extensionVal)
+		if exterr == nil && extension >= 0 {
+			return newCorrelationVector(correlationVector[:p], int32(extension), version, isImmutable), err
 		}
 		return nil, errors.New("correlationvector: invalid extension")
 	}
@@ -101,6 +119,10 @@ func Parse(correlationVector string) (*CorrelationVector, error) {
 // Increment increments the current extension by one. Do this before passing
 // the value to an outbound message header.
 func (cv *CorrelationVector) Increment() string {
+	if cv.isImmutable {
+		return cv.Value()
+	}
+
 	var snapshot int32
 	var next int32
 	for {
@@ -109,8 +131,9 @@ func (cv *CorrelationVector) Increment() string {
 			return cv.Value()
 		}
 		next = snapshot + 1
-		size := len(cv.baseVector) + 1 + int(math.Log10(float64(next))) + 1
-		if (cv.version == V1Version && size > int(MaxVectorLength)) || (cv.version == V2Version && size > int(MaxVectorLengthV2)) {
+
+		if isOversized(cv.baseVector, next, cv.version) {
+			cv.isImmutable = true
 			return cv.Value()
 		}
 		if atomic.CompareAndSwapInt32(&cv.extension, snapshot, next) {
@@ -121,7 +144,11 @@ func (cv *CorrelationVector) Increment() string {
 
 // Value gets the value of the correlation vector as a string.
 func (cv *CorrelationVector) Value() string {
-	return cv.baseVector + "." + strconv.Itoa(int(cv.extension))
+	var val = cv.baseVector + "." + strconv.Itoa(int(cv.extension))
+	if cv.isImmutable {
+		val += CVTerminator
+	}
+	return val
 }
 
 // Version gets the version of the correlation vector protocol.
@@ -129,11 +156,14 @@ func (cv *CorrelationVector) Version() Version {
 	return cv.version
 }
 
-func newCorrelationVector(baseVector string, extension int, version Version) *CorrelationVector {
-	cv := CorrelationVector{baseVector, int32(extension), version}
+// newCorrelationvector Creates a new CorrelationVector with the given parameters.
+func newCorrelationVector(baseVector string, extension int32, version Version, isImmutable bool) *CorrelationVector {
+	isImmutable = isImmutable || isOversized(baseVector, extension, version)
+	cv := CorrelationVector{baseVector, int32(extension), version, isImmutable}
 	return &cv
 }
 
+// getUniqueValue Generates a unique Guid with the given CV version.
 func getUniqueValue(version Version) (string, error) {
 	switch version {
 	case V1Version:
@@ -148,6 +178,7 @@ func getUniqueValue(version Version) (string, error) {
 	return "", errors.New("correlationvector: invalid Version")
 }
 
+// inferVersion Infers the CV version for the given Cv string.
 func inferVersion(correlationVector string) (Version, error) {
 	index := strings.Index(correlationVector, ".")
 
@@ -162,6 +193,7 @@ func inferVersion(correlationVector string) (Version, error) {
 	return V1Version, errors.New("correlationvector: invalid correlation vector string")
 }
 
+// validate Checks if the given cv string is in validate format of the given CV version.
 func validate(correlationVector string, version Version) error {
 	var maxVectorLength int
 	var baseLength int
@@ -194,4 +226,27 @@ func validate(correlationVector string, version Version) error {
 	}
 
 	return nil
+}
+
+// intLength Gets the length of the given non-negative integer.
+func intLength(num int32) int {
+	if num == 0 {
+		return 1
+	}
+	return int(math.Log10(float64(num))) + 1
+}
+
+// isImmutable Checks whether the given cv string is immutable.
+func isImmutable(correlationVector string) bool {
+	return correlationVector != "" && strings.HasSuffix(correlationVector, CVTerminator)
+}
+
+// isOversized Checks whether the given cv, with its baseVector, extension and version is oversized.
+func isOversized(baseVector string, extension int32, version Version) bool {
+	if baseVector == "" {
+		return false
+	}
+
+	var cvLen = len(baseVector) + 1 + intLength(extension)
+	return (version == V1Version && cvLen > MaxVectorLength) || (version == V2Version && cvLen > MaxVectorLengthV2)
 }
