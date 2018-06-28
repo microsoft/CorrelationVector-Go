@@ -37,3 +37,21 @@ func TestSpinSortValidation(t *testing.T) {
 		t.Errorf("Expecting the extension to wrap at most 1 time, actually wrapped %d times", wrappedCounter)
 	}
 }
+
+func TestSpinOverMaxCVLength(t *testing.T) {
+
+	var baseVector = "tul4NUsfs9Cl7mOf.2147483647.2147483647.2147483647.214748364.23"
+	cv, _ := Spin(baseVector)
+	if cv.Value() != (baseVector + CVTerminator) {
+		t.Errorf("Termination should be applied for CV that goes beyond max length after spin operation")
+	}
+}
+
+func TestSpinOverMaxCVLengthV2(t *testing.T) {
+
+	var baseVector = "KZY+dsX2jEaZesgCPjJ2Ng.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.2147483647.214"
+	cv, _ := Spin(baseVector)
+	if cv.Value() != (baseVector + CVTerminator) {
+		t.Errorf("Termination should be applied for CV that goes beyond max length after spin operation")
+	}
+}
