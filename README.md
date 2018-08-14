@@ -7,6 +7,12 @@ The standard is widely used internally at Microsoft for first party applications
 
 For more on the correlation vector specification and the scenarios it supports, please refer to the [specification](https://github.com/Microsoft/CorrelationVector) repo.
 
+# CorrelationVector for Go
+
+[![godoc](https://godoc.org/github.com/Microsoft/CorrelationVector-Go?status.svg)](https://godoc.org/github.com/Microsoft/CorrelationVector-Go)
+[![Build Status](https://travis-ci.org/Microsoft/CorrelationVector-Go.svg?branch=master)](https://travis-ci.org/Microsoft/CorrelationVector-Go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Microsoft/CorrelationVector-Go)](https://goreportcard.com/report/github.com/Microsoft/CorrelationVector-Go)
+
 This repo provides reference implementation for GO developers to incorporate the cV for their distributed debugging and correlated analytics scenarios.
 
 # Contributing
