@@ -13,7 +13,7 @@ For more on the correlation vector specification and the scenarios it supports, 
 [![Build Status](https://travis-ci.org/Microsoft/CorrelationVector-Go.svg?branch=master)](https://travis-ci.org/Microsoft/CorrelationVector-Go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/Microsoft/CorrelationVector-Go)](https://goreportcard.com/report/github.com/Microsoft/CorrelationVector-Go)
 
-This repo provides reference implementation for GO developers to incorporate the cV for their distributed debugging and correlated analytics scenarios.
+This repo provides reference implementation for Go developers to incorporate the cV for their distributed debugging and correlated analytics scenarios.
 
 # Contributing
 
