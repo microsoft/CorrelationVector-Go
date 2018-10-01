@@ -94,7 +94,9 @@ func SpinWithParameters(correlationVector string, parameters *SpinParameters) (*
 	}
 
 	entropy := make([]byte, int(parameters.Entropy))
-	rand.Read(entropy)
+	if _, err := rand.Read(entropy); err != nil {
+		return nil, err
+	}
 
 	// Ticks is defined as 100 nanoseconds.
 	ticks := time.Now().UnixNano() / 100
