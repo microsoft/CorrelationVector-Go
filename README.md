@@ -1,11 +1,19 @@
+# Correlation Vector
+
+## Background
+
+**Correlation Vector** (a.k.a. **cV**) is a format and protocol standard for tracing and correlation of events through a distributed system based on a light weight vector clock.
+The standard is widely used internally at Microsoft for first party applications and services and supported across multiple logging libraries and platforms (Services, Clients - Native, Managed, Js, iOS, Android etc). The standard powers a variety of different data processing needs ranging from distributed tracing & debugging to system and business intelligence, in various business organizations.
+
+For more on the correlation vector specification and the scenarios it supports, please refer to the [specification](https://github.com/Microsoft/CorrelationVector) repo.
+
 # CorrelationVector for Go
 
 [![godoc](https://godoc.org/github.com/Microsoft/CorrelationVector-Go?status.svg)](https://godoc.org/github.com/Microsoft/CorrelationVector-Go)
 [![Build Status](https://travis-ci.org/Microsoft/CorrelationVector-Go.svg?branch=master)](https://travis-ci.org/Microsoft/CorrelationVector-Go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/Microsoft/CorrelationVector-Go)](https://goreportcard.com/report/github.com/Microsoft/CorrelationVector-Go)
 
-CorrelationVector-Go provides the Go implementation of the CorrelationVector protocol for
-tracing and correlation of events through a distributed system.
+This repo provides reference implementation for Go developers to incorporate the cV for their distributed debugging and correlated analytics scenarios.
 
 # Correlation Vector
 ## Background
